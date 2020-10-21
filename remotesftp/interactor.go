@@ -2,8 +2,11 @@ package remotesftp
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
+	"path"
 
+	"github.com/pantskun/pathlib"
 	"github.com/pantskun/remotelib/remotessh"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -11,8 +14,8 @@ import (
 
 type Interactor interface {
 	Close()
-	WriteFIle(src string, des string) error
-	ReadFile(des string) ([]byte, error)
+	Upload(src string, des string) error
+	Download(src string, des string) error
 }
 
 type interactor struct {
@@ -43,13 +46,36 @@ func (i *interactor) Close() {
 	i.sshClient.Close()
 }
 
-func (i *interactor) WriteFIle(src string, des string) error {
+func (i *interactor) Upload(src string, des string) error {
+	isDir, err := pathlib.IsDir(src)
+	if err != nil {
+		return err
+	}
+
+	if err := i.sftpClient.MkdirAll(des); err != nil {
+		return err
+	}
+
+	if isDir {
+		return i.uploadDirectory(src, des)
+	} else {
+		return i.uploadFile(src, des)
+	}
+}
+
+func (i *interactor) Download(src string, des string) error {
+	return nil
+}
+
+func (i *interactor) uploadFile(src string, des string) error {
 	srcfile, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 
-	desfile, err := i.sftpClient.Create(des)
+	newDes := path.Join(des, path.Base(src))
+
+	desfile, err := i.sftpClient.OpenFile(newDes, os.O_WRONLY|os.O_CREATE)
 	if err != nil {
 		return err
 	}
@@ -62,6 +88,37 @@ func (i *interactor) WriteFIle(src string, des string) error {
 	return nil
 }
 
-func (i *interactor) ReadFile(des string) ([]byte, error) {
-	return nil, nil
+func (i *interactor) uploadDirectory(src string, des string) error {
+	// 创建远程目录
+	newDes := path.Join(des, path.Base(src))
+	if err := i.sftpClient.MkdirAll(newDes); err != nil {
+		return err
+	}
+
+	// 获取src目录内容
+	fileinfos, err := ioutil.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	// 遍历src目录内容
+	for _, fileinfo := range fileinfos {
+		newSrc := path.Join(src, fileinfo.Name())
+
+		if fileinfo.IsDir() {
+			// 若为目录，递归目录
+			err := i.uploadDirectory(newSrc, newDes)
+			if err != nil {
+				return err
+			}
+		} else {
+			// 若为文件，上传文件
+			err := i.uploadFile(newSrc, newDes)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
