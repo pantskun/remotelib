@@ -20,7 +20,7 @@ type interactor struct {
 var _ Interactor = (*interactor)(nil)
 
 func NewInteractor(config SSHConfig) (Interactor, error) {
-	clientConfig := NewClientConfig(config.User, config.Password, nil)
+	clientConfig := NewClientConfig(config.User, config.Password, 10, nil)
 
 	client, err := ssh.Dial(config.Network, config.IP+":"+config.Port, clientConfig)
 	if err != nil {

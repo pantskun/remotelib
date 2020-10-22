@@ -26,7 +26,7 @@ type interactor struct {
 var _ Interactor = (*interactor)(nil)
 
 func NewInteractor(config SFTPConfig) (Interactor, error) {
-	sshClientConfig := remotessh.NewClientConfig(config.User, config.Password, nil)
+	sshClientConfig := remotessh.NewClientConfig(config.User, config.Password, 10, nil)
 
 	sshClient, err := ssh.Dial(config.Network, config.IP+":"+config.Port, sshClientConfig)
 	if err != nil {

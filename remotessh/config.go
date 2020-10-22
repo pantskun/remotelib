@@ -12,9 +12,10 @@ type SSHConfig struct {
 	Port     string
 	User     string
 	Password string
+	Timeout  time.Duration
 }
 
-func NewClientConfig(user string, password string, publicKey ssh.PublicKey) *ssh.ClientConfig {
+func NewClientConfig(user string, password string, timeout time.Duration, publicKey ssh.PublicKey) *ssh.ClientConfig {
 	if publicKey != nil {
 		return &ssh.ClientConfig{
 			User: user,
