@@ -2,13 +2,15 @@ package remotessh
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 
 	"golang.org/x/crypto/ssh"
 )
 
 type Interactor interface {
 	Close()
-	Run(cmd string) (string, error)
+	Run(cmds []string) (string, error)
 }
 
 type interactor struct {
@@ -32,7 +34,7 @@ func (i *interactor) Close() {
 	i.client.Close()
 }
 
-func (i *interactor) Run(cmd string) (string, error) {
+func (i *interactor) Run(cmds []string) (string, error) {
 	session, err := i.client.NewSession()
 	if err != nil {
 		return "", err
@@ -40,12 +42,52 @@ func (i *interactor) Run(cmd string) (string, error) {
 
 	defer session.Close()
 
-	var b bytes.Buffer
-	session.Stdout = &b
+	var (
+		stdout io.Reader
+		stderr io.Reader
+		stdin  io.WriteCloser
 
-	if err := session.Run(cmd); err != nil {
+		stdoutBuf bytes.Buffer
+		stderrBuf bytes.Buffer
+	)
+
+	if stdout, err = session.StdoutPipe(); err != nil {
 		return "", err
 	}
 
-	return b.String(), nil
+	if stderr, err = session.StderrPipe(); err != nil {
+		return "", err
+	}
+
+	if stdin, err = session.StdinPipe(); err != nil {
+		return "", err
+	}
+
+	if err = session.Shell(); err != nil {
+		return "", err
+	}
+
+	for _, cmd := range cmds {
+		_, err = stdin.Write([]byte(cmd + "\n"))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	_, err = stdin.Write([]byte("exit\n"))
+	if err != nil {
+		return "", err
+	}
+
+	_, err = io.Copy(&stdoutBuf, stdout)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = io.Copy(&stderrBuf, stderr)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintln("stdout:\n", stdoutBuf.String(), "stderr:\n", stderrBuf.String()), nil
 }

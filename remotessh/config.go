@@ -1,6 +1,10 @@
 package remotessh
 
-import "golang.org/x/crypto/ssh"
+import (
+	"time"
+
+	"golang.org/x/crypto/ssh"
+)
 
 type SSHConfig struct {
 	Network  string
@@ -18,6 +22,7 @@ func NewClientConfig(user string, password string, publicKey ssh.PublicKey) *ssh
 				ssh.Password(password),
 			},
 			HostKeyCallback: ssh.FixedHostKey(publicKey),
+			Timeout:         10 * time.Second,
 		}
 	}
 
@@ -27,5 +32,6 @@ func NewClientConfig(user string, password string, publicKey ssh.PublicKey) *ssh
 			ssh.Password(password),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
 	}
 }
