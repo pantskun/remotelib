@@ -1,6 +1,7 @@
 package remotessh
 
 import (
+	"net"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -15,6 +16,12 @@ type SSHConfig struct {
 	Timeout  time.Duration
 }
 
+const defaultTimeout = 10
+
+func defaultHostKeyCallback(hostname string, remote net.Addr, key ssh.PublicKey) error {
+	return nil
+}
+
 func NewClientConfig(user string, password string, timeout time.Duration, publicKey ssh.PublicKey) *ssh.ClientConfig {
 	if publicKey != nil {
 		return &ssh.ClientConfig{
@@ -23,7 +30,7 @@ func NewClientConfig(user string, password string, timeout time.Duration, public
 				ssh.Password(password),
 			},
 			HostKeyCallback: ssh.FixedHostKey(publicKey),
-			Timeout:         10 * time.Second,
+			Timeout:         defaultTimeout * time.Second,
 		}
 	}
 
@@ -32,7 +39,7 @@ func NewClientConfig(user string, password string, timeout time.Duration, public
 		Auth: []ssh.AuthMethod{
 			ssh.Password(password),
 		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         10 * time.Second,
+		HostKeyCallback: defaultHostKeyCallback,
+		Timeout:         defaultTimeout * time.Second,
 	}
 }
