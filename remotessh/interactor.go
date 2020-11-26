@@ -23,6 +23,8 @@ type interactor struct {
 
 var _ Interactor = (*interactor)(nil)
 
+// NewInteractor
+// 获取与ssh服务器交互的Interator
 func NewInteractor(config SSHConfig) (Interactor, error) {
 	clientConfig := NewClientConfig(config.User, config.Password, 10, nil)
 
