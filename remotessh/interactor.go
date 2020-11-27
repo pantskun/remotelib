@@ -26,7 +26,7 @@ var _ Interactor = (*interactor)(nil)
 // NewInteractor
 // 获取与服务器进行ssh交互的Interator.
 func NewInteractor(config SSHConfig) (Interactor, error) {
-	clientConfig := NewClientConfig(config.User, config.Password, 10, nil)
+	clientConfig := NewClientConfig(config.User, config.Password, config.Timeout, nil)
 
 	client, err := ssh.Dial(config.Network, config.IP+":"+config.Port, clientConfig)
 	if err != nil {
