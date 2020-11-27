@@ -47,7 +47,7 @@ func (i *interactor) Close() {
 	i.sshClient.Close()
 }
 
-// Upload upload src(local) to des(remote)
+// Upload upload src(local) to des(remote).
 func (i *interactor) Upload(src string, des string) error {
 	if err := i.sftpClient.MkdirAll(des); err != nil {
 		return err
