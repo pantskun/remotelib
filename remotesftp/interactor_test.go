@@ -24,7 +24,7 @@ func TestUpload(t *testing.T) {
 	}
 	defer interactor.Close()
 
-	err = interactor.Upload(path.Join(pathlib.GetModulePath("remotelib"), "remotesftp/test.txt"), "/home/wx/test")
+	err = interactor.Upload(path.Join(pathlib.GetModulePath("remotelib"), "remotesftp/uploadTest"), "/home/wx")
 	if err != nil {
 		t.Log(err)
 	}
@@ -46,7 +46,7 @@ func TestDownload(t *testing.T) {
 	}
 	defer interactor.Close()
 
-	err = interactor.Download("/home/wx/test", pathlib.GetModulePath("remotelib"))
+	err = interactor.Download("/home/wx/downloadTest", path.Join(pathlib.GetModulePath("remotelib"), "remotesftp"))
 	if err != nil {
 		t.Log(err)
 	}
