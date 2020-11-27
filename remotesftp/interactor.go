@@ -28,7 +28,7 @@ var _ Interactor = (*interactor)(nil)
 // NewInteractor
 // 获取与服务器进行sftp交互的Interator.
 func NewInteractor(config SFTPConfig) (Interactor, error) {
-	sshClientConfig := remotessh.NewClientConfig(config.User, config.Password, 10, nil)
+	sshClientConfig := remotessh.NewClientConfig(config.User, config.Password, config.Timeout, nil)
 
 	sshClient, err := ssh.Dial(config.Network, config.IP+":"+config.Port, sshClientConfig)
 	if err != nil {
