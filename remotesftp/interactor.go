@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/pantskun/pathlib"
 	"github.com/pantskun/remotelib/remotessh"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -48,25 +47,40 @@ func (i *interactor) Close() {
 	i.sshClient.Close()
 }
 
+// Upload upload src(local) to des(remote)
 func (i *interactor) Upload(src string, des string) error {
-	isDir, err := pathlib.IsDir(src)
-	if err != nil {
-		return err
-	}
-
 	if err := i.sftpClient.MkdirAll(des); err != nil {
 		return err
 	}
 
-	if isDir {
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if info.IsDir() {
 		return i.uploadDirectory(src, des)
 	} else {
 		return i.uploadFile(src, des)
 	}
 }
 
+// Download download src(remote) to des(local).
 func (i *interactor) Download(src string, des string) error {
-	return nil
+	if err := os.MkdirAll(des, os.ModeDir); err != nil {
+		return err
+	}
+
+	info, err := i.sftpClient.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if info.IsDir() {
+		return i.downloadDirectory(src, des)
+	} else {
+		return i.downloadFile(src, des)
+	}
 }
 
 func (i *interactor) uploadFile(src string, des string) error {
@@ -109,14 +123,61 @@ func (i *interactor) uploadDirectory(src string, des string) error {
 
 		if fileinfo.IsDir() {
 			// 若为目录，递归目录
-			err := i.uploadDirectory(newSrc, newDes)
-			if err != nil {
+			if err := i.uploadDirectory(newSrc, newDes); err != nil {
 				return err
 			}
 		} else {
 			// 若为文件，上传文件
-			err := i.uploadFile(newSrc, newDes)
-			if err != nil {
+			if err := i.uploadFile(newSrc, newDes); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (i *interactor) downloadFile(src string, des string) error {
+	srcfile, err := i.sftpClient.OpenFile(src, os.O_RDONLY)
+	if err != nil {
+		return err
+	}
+
+	newDes := path.Join(des, path.Base(src))
+
+	desfile, err := os.Create(newDes)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(desfile, srcfile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (i *interactor) downloadDirectory(src string, des string) error {
+	newDes := path.Join(des, path.Base(src))
+	if err := os.MkdirAll(newDes, os.ModeDir); err != nil {
+		return err
+	}
+
+	fileinfos, err := i.sftpClient.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	for _, fileinfo := range fileinfos {
+		newSrc := path.Join(src, fileinfo.Name())
+
+		if fileinfo.IsDir() {
+			if err := i.downloadDirectory(newSrc, newDes); err != nil {
+				return err
+			}
+		} else {
+			if err := i.downloadFile(newSrc, newDes); err != nil {
 				return err
 			}
 		}
