@@ -95,10 +95,14 @@ func (i *interactor) Run(cmds []string) error {
 	return nil
 }
 
+// GetStdout
+// get stdout.
 func (i *interactor) GetStdout() string {
 	return i.stdoutBuf.String()
 }
 
+// GetStderr
+// get stderr.
 func (i *interactor) GetStderr() string {
 	return i.stderrBuf.String()
 }
