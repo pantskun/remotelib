@@ -1,6 +1,7 @@
 package remotessh
 
 import (
+	"log"
 	"testing"
 )
 
@@ -20,14 +21,12 @@ func TestInteractor(t *testing.T) {
 	defer sshInteractor.Close()
 
 	cmds := []string{
-		"cd /home/wx/CrawlerDemo",
-		"go run ./start.go -n 4",
+		"echo test",
 	}
 
 	if err := sshInteractor.Run(cmds); err != nil {
 		t.Fatal(err)
 	}
 
-	t.Log("stdout:", sshInteractor.GetStdout())
-	t.Log("stderr:", sshInteractor.GetStderr())
+	log.Println(sshInteractor.GetStdout())
 }
